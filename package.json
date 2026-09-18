@@ -1,0 +1,37 @@
+{
+  "name": "marcello-coppo-qea",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:db": "node scripts/test-db-integration.mjs",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "setup:secrets": "node scripts/genera-segreti.mjs"
+  },
+  "dependencies": {
+    "@marsidev/react-turnstile": "1.6.1",
+    "@supabase/supabase-js": "2.116.0",
+    "next": "16.3.5",
+    "qrcode": "1.5.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/qrcode": "1.5.6",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.1",
+    "eslint-config-next": "16.3.5",
+    "typescript": "5.9.3"
+  }
+}

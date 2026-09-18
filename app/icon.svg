@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Marcello Coppo">
+  <rect width="64" height="64" rx="12" fill="#123a63"/>
+  <path d="M0 52h21.34v12H0z" fill="#17734a"/>
+  <path d="M21.33 52h21.34v12H21.33z" fill="#fff"/>
+  <path d="M42.66 52H64v12H42.66z" fill="#b63239"/>
+  <text x="32" y="39" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="25" font-weight="700">MC</text>
+</svg>
