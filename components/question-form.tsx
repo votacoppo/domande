@@ -104,6 +104,9 @@ export function QuestionForm({ enabled, siteKey }: { enabled: boolean; siteKey: 
       ) : null}
       <div className="field">
         <label className="label" htmlFor="questionText">La tua domanda</label>
+        <p className="field-hint">
+          Non inserire nomi, recapiti o altri dati personali, tuoi o di terzi.
+        </p>
         <textarea
           className="textarea"
           id="questionText"
@@ -155,7 +158,8 @@ export function QuestionForm({ enabled, siteKey }: { enabled: boolean; siteKey: 
           onChange={(event) => setPrivacyAccepted(event.target.checked)}
         />
         <span>
-          Ho letto e accetto l’<Link href="/privacy">informativa privacy</Link>.
+          Ho letto l’<Link href="/privacy">informativa privacy</Link> e acconsento al trattamento
+          per inviare la domanda.
         </span>
       </label>
 

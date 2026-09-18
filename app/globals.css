@@ -42,6 +42,7 @@ h3 { font-size: 1.45rem; margin: 0; }
 .form-panel { padding: clamp(22px, 4vw, 36px); }
 .field { display: grid; gap: 8px; margin-bottom: 20px; }
 .label { color: var(--navy); font-weight: 700; }
+.field-hint { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.45; }
 .input, .textarea { width: 100%; border: 1px solid #adc4d4; border-radius: 12px; background: #fff; color: var(--ink); padding: 13px 14px; }
 .textarea { min-height: 150px; resize: vertical; line-height: 1.55; }
 .input:focus, .textarea:focus { border-color: var(--sky); box-shadow: 0 0 0 4px rgb(22 121 171 / 13%); outline: none; }

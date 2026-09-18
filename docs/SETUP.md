@@ -79,3 +79,9 @@ La procedura di cancellazione deve essere scelta prima dell'online e coincidere 
 `DATA_RETENTION_POLICY`. Se è manuale, deve indicare una scadenza operativa anteriore al limite
 dichiarato e un responsabile: un generico controllo mensile non garantisce il rispetto di un giorno
 esatto. La dashboard permette di eliminare singole domande e interi archivi con conferma.
+
+Per questo progetto la scelta confermata è automatica: la seconda migrazione abilita Supabase Cron
+e cancella ogni giorno domande e archivi oltre 30 giorni, oltre agli eventi tecnici di rate limit
+oltre 2 giorni. La dashboard consente comunque la cancellazione anticipata. Prima dell'online il
+test remoto deve verificare che il job `qea-retention-daily` sia attivo e abbia almeno un'esecuzione
+riuscita registrata nella cronologia Supabase.

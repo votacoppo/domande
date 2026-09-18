@@ -29,11 +29,21 @@ export default function PrivacyPage() {
         l’indirizzo IP viene trasformato sul server con una funzione HMAC non reversibile; vengono
         inoltre trattati temporaneamente informazioni tecniche del browser, data e ora.
       </p>
+      <p>
+        Non inserire nella domanda nomi, recapiti, dati personali di terzi o informazioni
+        particolarmente delicate. Le domande possono essere lette dal personale incaricato della
+        moderazione e, se selezionate, mostrate pubblicamente sullo schermo della sala.
+      </p>
       <h2>Finalità e base giuridica</h2>
       <p>
         I dati servono a ricevere, moderare e mostrare domande durante incontri pubblici e a
         proteggere il servizio da spam e tentativi di abuso. Il testo viene mostrato solo dopo
         moderazione. Base giuridica indicata dal titolare: {config.legalBasis}.
+      </p>
+      <p>
+        Il conferimento è facoltativo. Senza il consenso la domanda non viene inviata e non ci sono
+        altre conseguenze. Non vengono effettuate profilazione o decisioni esclusivamente
+        automatizzate sulla persona; la selezione delle domande è svolta dalla moderazione.
       </p>
       <h2>Fornitori</h2>
       <p>
@@ -44,9 +54,11 @@ export default function PrivacyPage() {
       <p>{config.retentionPolicy}</p>
       <h2>Diritti</h2>
       <p>
-        Puoi chiedere informazioni, accesso o cancellazione usando il contatto indicato sopra.
-        Poiché il modulo non raccoglie identità, potrebbe non essere possibile ricondurre una
-        domanda specifica alla persona che l’ha inviata.
+        Puoi revocare il consenso e chiedere informazioni, accesso, rettifica, cancellazione o
+        limitazione usando il contatto indicato sopra; resta fermo il diritto di proporre reclamo
+        al Garante per la protezione dei dati personali. Poiché il modulo non raccoglie identità,
+        per individuare una domanda potrebbe essere necessario indicarne il testo e il contesto di
+        invio. La revoca non pregiudica la liceità del trattamento precedente.
       </p>
     </main>
   );

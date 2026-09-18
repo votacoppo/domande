@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const sql = readFileSync(new URL("../supabase/migrations/20260918085043_qea_schema.sql", import.meta.url), "utf8").toLowerCase();
+const retentionSql = readFileSync(
+  new URL("../supabase/migrations/20260918123614_qea_retention_30_days.sql", import.meta.url),
+  "utf8",
+).toLowerCase();
 
 test("migrazione protegge tutte le tabelle esposte", () => {
   for (const table of ["audience_questions", "audience_question_archives", "audience_question_archive_items", "qea_rate_limit_events"]) {
@@ -31,4 +35,13 @@ test("eliminare un archivio elimina anche i suoi elementi", () => {
     sql,
     /grant select, insert, delete on table public\.audience_question_archives to service_role/,
   );
+});
+
+test("la conservazione è automatica in Supabase e non modifica cron.job direttamente", () => {
+  assert.match(retentionSql, /create extension if not exists pg_cron/);
+  assert.match(retentionSql, /cron\.schedule/);
+  assert.match(retentionSql, /audience_questions[\s\S]*interval '30 days'/);
+  assert.match(retentionSql, /audience_question_archives[\s\S]*interval '30 days'/);
+  assert.match(retentionSql, /qea_rate_limit_events[\s\S]*interval '2 days'/);
+  assert.equal(/(?:insert|update|delete)[\s\S]*cron\.job\b/.test(retentionSql), false);
 });
