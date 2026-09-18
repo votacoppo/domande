@@ -35,6 +35,23 @@ Partire da `.env.example`. I valori obbligatori sono:
 di chi configura l'hosting: l'output va copiato direttamente nelle variabili protette e non va
 salvato nel repository.
 
+### Raccolta sicura degli accessi sul computer di Marco
+
+Per inserire in una sola volta gli accessi temporanei necessari all'installazione, eseguire:
+
+```bash
+bash scripts/configura-accessi-coppo.sh
+```
+
+Lo script mostra un modello, accetta l'intero blocco compilato con un solo incolla e nasconde il
+contenuto durante l'inserimento. I valori passano direttamente alla cassaforte protetta del
+workspace: non vengono scritti nel repository, in un file temporaneo o nella cronologia della
+shell. I campi vuoti vengono ignorati e possono essere aggiunti in seguito rilanciando lo script.
+
+La password della casella email non viene raccolta. Per questa applicazione non servono inoltre
+le credenziali Cloudflare R2/S3, la chiave anon Supabase, la service-role legacy o una chiave
+Vercel AI Gateway: concedere accessi che l'app non usa aumenterebbe inutilmente il rischio.
+
 ## 4. Gate di consegna
 
 | Controllo | Stato locale | Stato live |
