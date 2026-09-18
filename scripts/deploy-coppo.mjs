@@ -411,13 +411,23 @@ async function status() {
     { headers: bearer(configuration.vercelToken) },
   );
   const latest = deployments?.deployments?.[0];
-  const aliases = Array.isArray(latest?.alias) ? latest.alias : [];
+  let deployment = latest;
+  const deploymentId = latest?.uid ?? latest?.id;
+  if (deploymentId) {
+    const detail = await requestJson(
+      "Dettaglio deployment Vercel",
+      `${VERCEL_API}/v13/deployments/${encodeURIComponent(deploymentId)}`,
+      { headers: bearer(configuration.vercelToken) },
+    );
+    deployment = detail.data;
+  }
+  const aliases = Array.isArray(deployment?.alias) ? deployment.alias : [];
   const liveUrl = productionDomain && aliases.includes(productionDomain.name) ? `https://${productionDomain.name}` : "assente";
   process.stdout.write(`VERCEL_PROJECT=${project.name}\n`);
   process.stdout.write(`PRODUCTION_URL=${liveUrl}\n`);
   process.stdout.write(`ENV_NAMES=${Array.isArray(envs) ? envs.map((entry) => entry.key).sort().join(",") : "non-disponibili"}\n`);
-  process.stdout.write(`DEPLOYMENT_STATE=${latest?.readyState ?? "assente"}\n`);
-  process.stdout.write(`DEPLOYMENT_SHA=${latest?.meta?.sourceCommitSha ?? "assente"}\n`);
+  process.stdout.write(`DEPLOYMENT_STATE=${deployment?.readyState ?? "assente"}\n`);
+  process.stdout.write(`DEPLOYMENT_SHA=${deployment?.meta?.sourceCommitSha ?? "assente"}\n`);
 }
 
 const mode = process.argv[2];
