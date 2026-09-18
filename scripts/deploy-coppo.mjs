@@ -78,6 +78,14 @@ async function vercelUser(token) {
   return data?.user ?? data;
 }
 
+async function vercelTeams(token) {
+  const { data } = await requestJson("Vercel team", `${VERCEL_API}/v2/teams?limit=100`, {
+    headers: bearer(token),
+  });
+  if (!Array.isArray(data?.teams)) throw new Error("Vercel non ha restituito l'elenco dei profili.");
+  return data.teams;
+}
+
 async function getVercelProject(token, name = PROJECT_NAME) {
   const { response, data } = await requestJson(
     "Vercel progetto",
@@ -95,10 +103,14 @@ function assertVercelUser(user, expectedUserId) {
   if (plan && plan !== "hobby") throw new Error("L'account Vercel non risulta Hobby.");
 }
 
-function assertOwnedProject(project, configuration) {
+function assertOwnedProject(project, configuration, teams) {
   if (!project?.id || project.name !== PROJECT_NAME) throw new Error("Il progetto Vercel trovato non è quello atteso.");
   if (project.accountId && project.accountId !== configuration.expectedVercelUser) {
-    throw new Error("Il progetto Vercel appartiene a un account diverso.");
+    const ownerTeam = teams.find((team) => team.id === project.accountId);
+    const teamPlan = ownerTeam?.billing?.plan ?? ownerTeam?.plan;
+    if (!ownerTeam || ownerTeam.creatorId !== configuration.expectedVercelUser || teamPlan !== "hobby") {
+      throw new Error("Il progetto Vercel appartiene a un profilo diverso da quello Hobby del cliente.");
+    }
   }
   if (project.link) {
     const linkedRepo = `${project.link.org}/${project.link.repo}`;
@@ -125,8 +137,9 @@ async function inspectServices(configuration) {
 
   const user = await vercelUser(configuration.vercelToken);
   assertVercelUser(user, configuration.expectedVercelUser);
+  const teams = await vercelTeams(configuration.vercelToken);
   const project = await getVercelProject(configuration.vercelToken);
-  if (project) assertOwnedProject(project, configuration);
+  if (project) assertOwnedProject(project, configuration, teams);
 
   const localRemote = normalizeRepoUrl(git("remote", "get-url", "origin"));
   if (localRemote !== normalizeRepoUrl(configuration.repoUrl)) throw new Error("Il remote Git locale non corrisponde a COPPO_GITHUB_REPO_URL.");
@@ -134,7 +147,7 @@ async function inspectServices(configuration) {
   // verifica comunque raggiungibilità e autorizzazione senza rifiutare il caso vuoto.
   git("ls-remote", "origin");
 
-  return { cloudflareWidgets, project, supabaseProject };
+  return { cloudflareWidgets, project, supabaseProject, teams };
 }
 
 async function preflight() {
@@ -146,10 +159,10 @@ async function preflight() {
   process.stdout.write("OK GitHub: remote raggiungibile e coerente\n");
 }
 
-async function ensureVercelProject(configuration) {
+async function ensureVercelProject(configuration, teams) {
   const existing = await getVercelProject(configuration.vercelToken);
   if (existing) {
-    assertOwnedProject(existing, configuration);
+    assertOwnedProject(existing, configuration, teams);
     return existing;
   }
   const { data } = await requestJson("Creazione progetto Vercel", `${VERCEL_API}/v11/projects`, {
@@ -157,7 +170,7 @@ async function ensureVercelProject(configuration) {
     headers: jsonHeaders(configuration.vercelToken),
     body: JSON.stringify({ name: PROJECT_NAME, framework: "nextjs" }),
   });
-  assertOwnedProject(data, configuration);
+  assertOwnedProject(data, configuration, teams);
   return data;
 }
 
@@ -258,8 +271,8 @@ async function setAndVerifyEnvironment(token, projectId, environmentVariables) {
 
 async function configure() {
   const configuration = loadConfiguration();
-  await inspectServices(configuration);
-  const project = await ensureVercelProject(configuration);
+  const inspected = await inspectServices(configuration);
+  const project = await ensureVercelProject(configuration, inspected.teams);
   const hostname = await ensureProductionHostname(configuration.vercelToken, project.id);
   const siteUrl = `https://${hostname}`;
   const widget = await ensureTurnstileWidget(configuration.cloudflareToken, configuration.cloudflareAccount, hostname);
@@ -382,7 +395,8 @@ async function status() {
   const configuration = loadConfiguration();
   const project = await getVercelProject(configuration.vercelToken);
   if (!project) throw new Error("Progetto Vercel non ancora creato.");
-  assertOwnedProject(project, configuration);
+  const teams = await vercelTeams(configuration.vercelToken);
+  assertOwnedProject(project, configuration, teams);
   const domains = await projectDomains(configuration.vercelToken, project.id);
   const productionDomain = domains.find((domain) => domain.name === DESIRED_HOSTNAME && domain.verified);
   const { data: envData } = await requestJson(
