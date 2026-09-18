@@ -7,6 +7,14 @@ const retentionSql = readFileSync(
   new URL("../supabase/migrations/20260918123614_qea_retention_30_days.sql", import.meta.url),
   "utf8",
 ).toLowerCase();
+const strictRetentionSql = readFileSync(
+  new URL("../supabase/migrations/20260918130114_qea_retention_strict_bound.sql", import.meta.url),
+  "utf8",
+).toLowerCase();
+const rlsTriggerHardeningSql = readFileSync(
+  new URL("../supabase/migrations/20260918130948_revoke_public_rls_trigger_execution.sql", import.meta.url),
+  "utf8",
+).toLowerCase();
 
 test("migrazione protegge tutte le tabelle esposte", () => {
   for (const table of ["audience_questions", "audience_question_archives", "audience_question_archive_items", "qea_rate_limit_events"]) {
@@ -40,8 +48,18 @@ test("eliminare un archivio elimina anche i suoi elementi", () => {
 test("la conservazione è automatica in Supabase e non modifica cron.job direttamente", () => {
   assert.match(retentionSql, /create extension if not exists pg_cron/);
   assert.match(retentionSql, /cron\.schedule/);
-  assert.match(retentionSql, /audience_questions[\s\S]*interval '30 days'/);
-  assert.match(retentionSql, /audience_question_archives[\s\S]*interval '30 days'/);
-  assert.match(retentionSql, /qea_rate_limit_events[\s\S]*interval '2 days'/);
-  assert.equal(/(?:insert|update|delete)[\s\S]*cron\.job\b/.test(retentionSql), false);
+  assert.match(strictRetentionSql, /private\.qea_cleanup_expired_data/);
+  assert.match(strictRetentionSql, /audience_questions[\s\S]*interval '29 days'/);
+  assert.match(strictRetentionSql, /audience_question_archive_items[\s\S]*interval '29 days'/);
+  assert.match(strictRetentionSql, /qea_rate_limit_events[\s\S]*interval '1 day'/);
+  assert.match(strictRetentionSql, /cron\.unschedule/);
+  assert.match(strictRetentionSql, /cron\.schedule/);
+  assert.equal(/(?:insert|update|delete)\s+(?:into\s+)?cron\.job\b/.test(retentionSql), false);
+  assert.equal(/(?:insert|update|delete)\s+(?:into\s+)?cron\.job\b/.test(strictRetentionSql), false);
+  assert.equal(strictRetentionSql.includes("security definer"), false);
+});
+
+test("la funzione automatica RLS non è invocabile dai ruoli API", () => {
+  assert.match(rlsTriggerHardeningSql, /revoke execute on function public\.rls_auto_enable\(\)/);
+  assert.match(rlsTriggerHardeningSql, /from public, anon, authenticated/);
 });

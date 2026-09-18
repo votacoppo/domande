@@ -8,7 +8,7 @@ La parità funzionale è documentata in `docs/PARITA-FUNZIONALE.md`. La configur
 
 ## Stack e costi
 
-- Next.js su Netlify Free (consigliato) oppure altro hosting Node compatibile.
+- Next.js su Vercel Hobby, nell'account dedicato del cliente.
 - Supabase Free per il database.
 - Cloudflare Turnstile Free per l'anti-spam.
 - Lo stesso Supabase applica il rate limit atomico, senza un account aggiuntivo.
@@ -28,5 +28,6 @@ npm run dev
 Senza servizi e dati privacy configurati, l'app si costruisce ma gli invii e il login restano
 chiusi. È una scelta di sicurezza.
 
-`npm run test:db` esegue i controlli reali della migrazione su un PostgreSQL di prova già avviato
-e indicato con `PGHOST`, `PGPORT` e `PGDATABASE`; non usa né modifica database esistenti.
+`npm run test:db` esegue i controlli completi su un PostgreSQL locale isolato.
+`npm run test:db:remote-safe` ripete sul Supabase del cliente RLS, concorrenza, conservazione e
+rollback usando fixture univoche: non tronca tabelle e rimuove soltanto i propri eventi tecnici.

@@ -7,6 +7,13 @@ Da consegnare con un canale sicuro, mai dentro il repository:
 - credenziali della dashboard Q&A;
 - questa guida operativa e la data dell'ultima prova live.
 
+Il codice è nel repository GitHub del cliente. Ogni aggiornamento va prima committato e pubblicato
+su `main`; il comando `npm run deploy:production`, eseguito con gli accessi del cliente, distribuisce
+soltanto quel commit e ne verifica l'alias pubblico.
+
+L'accesso alla dashboard usa l'email tecnica `votacoppodomande@gmail.com`; la password dedicata
+viene generata separatamente e non coincide con email, database o altri servizi.
+
 ## Uso quotidiano
 
 1. Apri `/interno/entra` dal telefono o computer di regia.
@@ -29,7 +36,6 @@ Da consegnare con un canale sicuro, mai dentro il repository:
 
 ## Limiti gratuiti verificati il 18 settembre 2026
 
-- Vercel Hobby è adatto solo all'uso non commerciale; Netlify Free consente progetti commerciali
-  ma sospende il sito fino al mese successivo se termina i crediti.
+- Vercel Hobby è adatto solo finché l'uso resta non commerciale, come confermato dal referente.
 - Supabase Free ha limiti di spazio/traffico e può mettere in pausa i progetti inattivi.
 - Turnstile Free ha propri limiti. I fornitori possono modificare i piani in futuro.
