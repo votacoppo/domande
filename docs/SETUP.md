@@ -48,9 +48,10 @@ contenuto durante l'inserimento. I valori passano direttamente alla cassaforte p
 workspace: non vengono scritti nel repository, in un file temporaneo o nella cronologia della
 shell. I campi vuoti vengono ignorati e possono essere aggiunti in seguito rilanciando lo script.
 
-La password della casella email non viene raccolta. Per questa applicazione non servono inoltre
-le credenziali Cloudflare R2/S3, la chiave anon Supabase, la service-role legacy o una chiave
-Vercel AI Gateway: concedere accessi che l'app non usa aumenterebbe inutilmente il rischio.
+Il raccoglitore accetta anche password email, credenziali Cloudflare R2/S3, chiavi Supabase
+aggiuntive e Vercel AI Gateway per predisporre la futura consegna completa al cliente. Questi valori
+restano nella cassaforte e non vengono usati dall'app: per installazione e deploy vengono selezionati
+soltanto gli accessi strettamente necessari.
 
 ## 4. Gate di consegna
 

@@ -15,8 +15,10 @@ fi
 
 print_template() {
   cat <<'EOF'
-Email: votacoppodomande@gmail.com
-Pass:
+COPPO
+
+- Email: votacoppodomande@gmail.com
+- Pass:
 
 Supabase:
 - Database pass:
@@ -27,24 +29,20 @@ Supabase:
 - Service Role:
 
 Cloudflare:
+- Accesso Google
 - Account ID:
 - Your API Token:
 - Access Key ID:
 - Secret Access Key:
-- S3 API Endpoint:
+- S3 API Endopoint: https://fd189cbbb5c0ddc6b2176ded3a036828.r2.cloudflarestorage.com
 
 GitHub:
-- Repository URL: https://github.com/votacoppo/domande
+- https://github.com/votacoppo/domande
 
 Vercel:
 - User ID:
 - AI Gateway API:
-- API Token:
-
-Dashboard interna:
-- Pass:
-
-FINE_CREDENZIALI
+- Token:
 EOF
 }
 
@@ -72,6 +70,7 @@ CLOUDFLARE_API_TOKEN=""
 CLOUDFLARE_ACCESS_KEY_ID=""
 CLOUDFLARE_SECRET_ACCESS_KEY=""
 CLOUDFLARE_S3_ENDPOINT=""
+CLOUDFLARE_LOGIN_METHOD=""
 GITHUB_REPO_URL=""
 VERCEL_USER_ID=""
 VERCEL_AI_GATEWAY_API=""
@@ -85,7 +84,7 @@ restore_echo() {
 
 echo "Copia il modello, compilalo e incollalo qui tutto insieme."
 echo "Durante l'incolla non comparirà nulla sullo schermo."
-echo "Il marker FINE_CREDENZIALI chiude il blocco."
+echo "Il blocco si chiude automaticamente dopo la riga Vercel '- Token:'."
 echo
 print_template
 echo
@@ -105,6 +104,7 @@ while IFS= read -r line <&3; do
   [ -n "$line" ] || continue
   case "$line" in
     \#*) continue ;;
+    COPPO) SECTION=""; continue ;;
     Supabase:) SECTION="supabase"; continue ;;
     Cloudflare:) SECTION="cloudflare"; continue ;;
     GitHub:) SECTION="github"; continue ;;
@@ -130,6 +130,8 @@ while IFS= read -r line <&3; do
   case "$SECTION:$line" in
     :Email:*) EMAIL="$value" ;;
     :Pass:*) EMAIL_PASSWORD="$value" ;;
+    :"- Email:"*) EMAIL="$value" ;;
+    :"- Pass:"*) EMAIL_PASSWORD="$value" ;;
     supabase:"- Database pass:"*) SUPABASE_DB_PASSWORD="$value" ;;
     supabase:"- Project URL:"*) SUPABASE_URL="$value" ;;
     supabase:"- Access Token (scade domani):"*) SUPABASE_ACCESS_TOKEN="$value" ;;
@@ -139,14 +141,17 @@ while IFS= read -r line <&3; do
     supabase:"- Service Role:"*) SUPABASE_SERVICE_ROLE_KEY="$value" ;;
     cloudflare:"- Account ID:"*) CLOUDFLARE_ACCOUNT_ID="$value" ;;
     cloudflare:"- Your API Token:"*) CLOUDFLARE_API_TOKEN="$value" ;;
+    cloudflare:"- Accesso Google") CLOUDFLARE_LOGIN_METHOD="google" ;;
     cloudflare:"- Access Key ID:"*) CLOUDFLARE_ACCESS_KEY_ID="$value" ;;
     cloudflare:"- Secret Access Key:"*) CLOUDFLARE_SECRET_ACCESS_KEY="$value" ;;
     cloudflare:"- S3 API Endpoint:"*) CLOUDFLARE_S3_ENDPOINT="$value" ;;
+    cloudflare:"- S3 API Endopoint:"*) CLOUDFLARE_S3_ENDPOINT="$value" ;;
     github:"- Repository URL:"*) GITHUB_REPO_URL="$value" ;;
     github:"- https://github.com/"*) GITHUB_REPO_URL="${line#- }" ;;
     vercel:"- User ID:"*) VERCEL_USER_ID="$value" ;;
     vercel:"- AI Gateway API:"*) VERCEL_AI_GATEWAY_API="$value" ;;
     vercel:"- API Token:"*) VERCEL_TOKEN="$value" ;;
+    vercel:"- Token:"*) VERCEL_TOKEN="$value"; FOUND_END=1; break ;;
     dashboard:"- Pass:"*) ADMIN_DASHBOARD_PASSWORD="$value" ;;
     *)
       restore_echo
@@ -162,22 +167,7 @@ trap - EXIT INT TERM HUP
 echo
 
 if [ "$FOUND_END" -ne 1 ]; then
-  echo "ERRORE: manca FINE_CREDENZIALI. Niente è stato salvato." >&2
-  exit 1
-fi
-
-if [ -n "$EMAIL_PASSWORD" ]; then
-  echo "ERRORE: lascia vuoto 'Pass' sotto Email: la password Gmail non serve all'app." >&2
-  exit 1
-fi
-
-if [ -n "$CLOUDFLARE_ACCESS_KEY_ID" ] || [ -n "$CLOUDFLARE_SECRET_ACCESS_KEY" ] || [ -n "$CLOUDFLARE_S3_ENDPOINT" ]; then
-  echo "ERRORE: lascia vuoti i tre campi Cloudflare S3/R2: non servono all'app." >&2
-  exit 1
-fi
-
-if [ -n "$VERCEL_AI_GATEWAY_API" ]; then
-  echo "ERRORE: lascia vuoto 'AI Gateway API' e compila invece 'API Token'." >&2
+  echo "ERRORE: manca l'ultima riga Vercel '- Token:'. Niente è stato salvato." >&2
   exit 1
 fi
 
@@ -198,6 +188,7 @@ validate_no_whitespace() {
 
 validate_no_whitespace COPPO_ADMIN_DASHBOARD_PASSWORD "$ADMIN_DASHBOARD_PASSWORD"
 validate_no_whitespace COPPO_EMAIL "$EMAIL"
+validate_no_whitespace COPPO_EMAIL_PASSWORD "$EMAIL_PASSWORD"
 validate_no_whitespace COPPO_SUPABASE_DB_PASSWORD "$SUPABASE_DB_PASSWORD"
 validate_no_whitespace COPPO_SUPABASE_URL "$SUPABASE_URL"
 validate_no_whitespace COPPO_SUPABASE_ACCESS_TOKEN "$SUPABASE_ACCESS_TOKEN"
@@ -206,8 +197,12 @@ validate_no_whitespace COPPO_SUPABASE_ANON_KEY "$SUPABASE_ANON_KEY"
 validate_no_whitespace COPPO_SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
 validate_no_whitespace COPPO_CLOUDFLARE_ACCOUNT_ID "$CLOUDFLARE_ACCOUNT_ID"
 validate_no_whitespace COPPO_CLOUDFLARE_API_TOKEN "$CLOUDFLARE_API_TOKEN"
+validate_no_whitespace COPPO_CLOUDFLARE_ACCESS_KEY_ID "$CLOUDFLARE_ACCESS_KEY_ID"
+validate_no_whitespace COPPO_CLOUDFLARE_SECRET_ACCESS_KEY "$CLOUDFLARE_SECRET_ACCESS_KEY"
+validate_no_whitespace COPPO_CLOUDFLARE_S3_ENDPOINT "$CLOUDFLARE_S3_ENDPOINT"
 validate_no_whitespace COPPO_GITHUB_REPO_URL "$GITHUB_REPO_URL"
 validate_no_whitespace COPPO_VERCEL_USER_ID "$VERCEL_USER_ID"
+validate_no_whitespace COPPO_VERCEL_AI_GATEWAY_API "$VERCEL_AI_GATEWAY_API"
 validate_no_whitespace COPPO_VERCEL_TOKEN "$VERCEL_TOKEN"
 
 save_value() {
@@ -220,6 +215,7 @@ save_value() {
 # Dati pubblici già confermati: vengono registrati insieme agli accessi per consentire
 # agli script successivi di operare senza chiedere nuovamente riferimenti al cliente.
 save_value COPPO_EMAIL "${EMAIL:-votacoppodomande@gmail.com}"
+save_value COPPO_EMAIL_PASSWORD "$EMAIL_PASSWORD"
 save_value COPPO_GITHUB_REPO_URL "${GITHUB_REPO_URL:-https://github.com/votacoppo/domande}"
 save_value COPPO_SUPABASE_URL "${SUPABASE_URL:-https://oektjluyukxtqzwhbrbd.supabase.co}"
 save_value COPPO_SUPABASE_PROJECT_REF "oektjluyukxtqzwhbrbd"
@@ -232,7 +228,12 @@ save_value COPPO_SUPABASE_ANON_KEY "$SUPABASE_ANON_KEY"
 save_value COPPO_SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
 save_value COPPO_CLOUDFLARE_ACCOUNT_ID "$CLOUDFLARE_ACCOUNT_ID"
 save_value COPPO_CLOUDFLARE_API_TOKEN "$CLOUDFLARE_API_TOKEN"
+save_value COPPO_CLOUDFLARE_LOGIN_METHOD "$CLOUDFLARE_LOGIN_METHOD"
+save_value COPPO_CLOUDFLARE_ACCESS_KEY_ID "$CLOUDFLARE_ACCESS_KEY_ID"
+save_value COPPO_CLOUDFLARE_SECRET_ACCESS_KEY "$CLOUDFLARE_SECRET_ACCESS_KEY"
+save_value COPPO_CLOUDFLARE_S3_ENDPOINT "$CLOUDFLARE_S3_ENDPOINT"
 save_value COPPO_VERCEL_USER_ID "$VERCEL_USER_ID"
+save_value COPPO_VERCEL_AI_GATEWAY_API "$VERCEL_AI_GATEWAY_API"
 save_value COPPO_VERCEL_TOKEN "$VERCEL_TOKEN"
 
 echo
