@@ -32,6 +32,7 @@ function rows(data) {
 
 for (const role of ["anon", "authenticated"]) {
   await query(`begin; set local role ${role}; select count(*) from public.audience_questions; rollback;`, false);
+  await query(`begin; set local role ${role}; select * from public.qea_settings; rollback;`, false);
 }
 
 const marker = randomBytes(16).toString("hex");

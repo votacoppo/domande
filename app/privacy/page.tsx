@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { privacyConfig } from "@/lib/config";
+import { DEVICE_COOKIE } from "@/lib/security/device";
 
 export const metadata: Metadata = { title: "Informativa privacy" };
 export const dynamic = "force-dynamic";
@@ -25,14 +26,22 @@ export default function PrivacyPage() {
       </p>
       <h2>Dati trattati</h2>
       <p>
-        Il modulo raccoglie il testo della domanda. Non chiede nome o email. Per prevenire abusi,
-        l’indirizzo IP viene trasformato sul server con una funzione HMAC non reversibile; vengono
-        inoltre trattati temporaneamente informazioni tecniche del browser, data e ora.
+        Il modulo raccoglie il testo della domanda. Se il modulo lo prevede, può chiedere anche nome
+        e cognome e un indirizzo email, in modo facoltativo o obbligatorio secondo quanto indicato
+        accanto al campo. Il nome, se inserito, può essere mostrato sullo schermo della sala insieme
+        alla domanda selezionata; l’email non viene mai mostrata pubblicamente ed è usata solo per
+        ricontattarti in merito alla domanda, senza newsletter né comunicazioni promozionali.
       </p>
       <p>
-        Non inserire nella domanda nomi, recapiti, dati personali di terzi o informazioni
-        particolarmente delicate. Le domande possono essere lette dal personale incaricato della
-        moderazione e, se selezionate, mostrate pubblicamente sullo schermo della sala.
+        Per prevenire abusi, l’indirizzo IP viene trasformato sul server con una funzione HMAC non
+        reversibile e il browser riceve un cookie tecnico ({DEVICE_COOKIE}, durata 24 ore) che serve
+        solo a limitare il numero di domande inviate dallo stesso dispositivo; vengono inoltre
+        trattati temporaneamente informazioni tecniche del browser, data e ora.
+      </p>
+      <p>
+        Nel testo della domanda non inserire dati personali di terzi o informazioni particolarmente
+        delicate. Le domande possono essere lette dal personale incaricato della moderazione e, se
+        selezionate, mostrate pubblicamente sullo schermo della sala.
       </p>
       <h2>Finalità e base giuridica</h2>
       <p>
@@ -56,9 +65,9 @@ export default function PrivacyPage() {
       <p>
         Puoi revocare il consenso e chiedere informazioni, accesso, rettifica, cancellazione o
         limitazione usando il contatto indicato sopra; resta fermo il diritto di proporre reclamo
-        al Garante per la protezione dei dati personali. Poiché il modulo non raccoglie identità,
-        per individuare una domanda potrebbe essere necessario indicarne il testo e il contesto di
-        invio. La revoca non pregiudica la liceità del trattamento precedente.
+        al Garante per la protezione dei dati personali. Se hai indicato nome o email, possiamo
+        individuare la tua domanda anche con questi dati; altrimenti potrebbe essere necessario
+        indicarne il testo e il contesto di invio. La revoca non pregiudica la liceità del trattamento precedente.
       </p>
     </main>
   );

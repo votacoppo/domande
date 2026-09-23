@@ -8,9 +8,11 @@ export function toPublishedQuestions(rows: Array<Record<string, unknown>>): Publ
       typeof row.question_text !== "string" ||
       typeof row.published_at !== "string"
     ) return [];
+    // Elenco chiuso di campi: email, IP e user agent non possono uscire per sbaglio.
     return [{
       id: row.id,
       question_text: row.question_text,
+      display_name: typeof row.display_name === "string" ? row.display_name : null,
       published_at: row.published_at,
     }];
   });

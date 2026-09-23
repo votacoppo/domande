@@ -1,6 +1,9 @@
-import type { RateLimitResult } from "./rate-limit-policy.ts";
+import { NETWORK_QUESTION_LIMIT, NETWORK_QUESTION_WINDOW_SECONDS } from "../config.ts";
+import { formatWait, type QuestionSettings } from "../question-settings.ts";
+import type { RateLimitInput, RateLimitResult } from "./rate-limit-policy.ts";
 
 const MIN_FILL_MS = 3_000;
+const SERVICE_UNAVAILABLE = "Servizio temporaneamente non disponibile.";
 
 export type PublicGuardResult =
   | { ok: true; ipHash: string }
@@ -10,16 +13,27 @@ export type PublicGuardDependencies = {
   now?: () => number;
   hashIp: (request: Request) => string | null;
   verifyCaptcha: (token: string, request: Request) => Promise<{ ok: true } | { ok: false; status: 403 | 503 }>;
-  checkRateLimit: (input: { key: string; ipHash: string; max: number }) => Promise<RateLimitResult>;
+  checkRateLimit: (input: RateLimitInput) => Promise<RateLimitResult>;
 };
 
 function text(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function blocked(rate: Extract<RateLimitResult, { allowed: false }>, message: (wait: string) => string): PublicGuardResult {
+  if (rate.status !== 429) return { ok: false, status: rate.status, error: rate.error };
+  return {
+    ok: false,
+    status: 429,
+    error: message(formatWait(rate.retryAfter ?? NETWORK_QUESTION_WINDOW_SECONDS)),
+    retryAfter: rate.retryAfter,
+  };
+}
+
 export async function verifyPublicSubmission(
   request: Request,
   record: Record<string, unknown>,
+  context: { deviceHash: string; settings: QuestionSettings },
   dependencies: PublicGuardDependencies,
 ): Promise<PublicGuardResult> {
   if (text(record._gotcha) || text(record.website)) {
@@ -35,10 +49,10 @@ export async function verifyPublicSubmission(
   try {
     ipHash = dependencies.hashIp(request);
   } catch {
-    return { ok: false, status: 503, error: "Servizio temporaneamente non disponibile." };
+    return { ok: false, status: 503, error: SERVICE_UNAVAILABLE };
   }
   if (!ipHash) {
-    return { ok: false, status: 503, error: "Servizio temporaneamente non disponibile." };
+    return { ok: false, status: 503, error: SERVICE_UNAVAILABLE };
   }
 
   const captcha = await dependencies.verifyCaptcha(text(record.turnstileToken), request);
@@ -52,14 +66,32 @@ export async function verifyPublicSubmission(
     };
   }
 
-  const rate = await dependencies.checkRateLimit({ key: "question-submit", ipHash, max: 10 });
-  if (!rate.allowed) {
-    return {
-      ok: false,
-      status: rate.status,
-      error: rate.error,
-      retryAfter: rate.retryAfter,
-    };
+  // Prima il limite per telefono: un dispositivo già bloccato non deve consumare
+  // anche il tetto condiviso dalla rete della sala.
+  const { deviceLimitMax, deviceLimitWindowSeconds } = context.settings;
+  if (deviceLimitMax !== null) {
+    const device = await dependencies.checkRateLimit({
+      key: "question-device",
+      identifier: context.deviceHash,
+      max: deviceLimitMax,
+      windowSeconds: deviceLimitWindowSeconds,
+    });
+    if (!device.allowed) {
+      const noun = deviceLimitMax === 1 ? "domanda" : "domande";
+      return blocked(device, (wait) =>
+        `Hai già inviato ${deviceLimitMax} ${noun}: potrai mandarne un’altra tra ${wait}.`);
+    }
+  }
+
+  const network = await dependencies.checkRateLimit({
+    key: "question-submit",
+    identifier: ipHash,
+    max: NETWORK_QUESTION_LIMIT,
+    windowSeconds: NETWORK_QUESTION_WINDOW_SECONDS,
+  });
+  if (!network.allowed) {
+    return blocked(network, (wait) =>
+      `Da questa rete sono arrivate troppe domande. Riprova tra ${wait}.`);
   }
   return { ok: true, ipHash };
 }

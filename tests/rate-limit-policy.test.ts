@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { runRateLimitCheck } from "../lib/security/rate-limit-policy.ts";
 
-const input = { key: "question-submit", ipHash: "a".repeat(64), max: 10 };
+const input = { key: "question-submit" as const, identifier: "a".repeat(64), max: 10 };
 
 test("rate limit distingue ammesso e soglia superata", async () => {
   const allowed = await runRateLimitCheck(input, async () => ({

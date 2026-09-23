@@ -25,6 +25,8 @@ export function adminBucket(row: Pick<QuestionRow, "status" | "published_at">): 
 
 export async function insertQuestion(input: {
   questionText: string;
+  displayName: string | null;
+  contactEmail: string | null;
   ipHash: string;
   userAgent: string | null;
   source: string;
@@ -34,6 +36,8 @@ export async function insertQuestion(input: {
     .from(TABLE)
     .insert({
       question_text: input.questionText,
+      display_name: input.displayName,
+      contact_email: input.contactEmail,
       status: "pending",
       ip_hash: input.ipHash,
       user_agent: input.userAgent,
@@ -49,7 +53,7 @@ export async function listPublishedQuestions(): Promise<PublishedQuestion[]> {
   const supabase = getAdminClient();
   const { data, error } = await supabase
     .from(TABLE)
-    .select("id, question_text, published_at, status")
+    .select("id, question_text, display_name, published_at, status")
     .eq("status", "published")
     .not("published_at", "is", null)
     .order("published_at", { ascending: false })
@@ -63,7 +67,7 @@ export async function listAdminSnapshot(): Promise<AdminSnapshot> {
   const [questionsResult, archivesResult] = await Promise.all([
     supabase
       .from(TABLE)
-      .select("id, question_text, status, created_at, published_at, rejected_at")
+      .select("id, question_text, status, created_at, published_at, rejected_at, display_name, contact_email")
       .order("created_at", { ascending: false })
       .limit(5000),
     supabase
@@ -93,7 +97,7 @@ export async function listArchiveItems(archiveId: string): Promise<ArchiveItem[]
   const { data, error } = await supabase
     .from("audience_question_archive_items")
     .select(
-      "id, original_question_id, question_text, status, admin_bucket, created_at, published_at, rejected_at",
+      "id, original_question_id, question_text, status, admin_bucket, created_at, published_at, rejected_at, display_name, contact_email",
     )
     .eq("archive_id", archiveId)
     .order("created_at", { ascending: false });

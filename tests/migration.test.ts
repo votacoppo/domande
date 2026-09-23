@@ -16,6 +16,11 @@ const rlsTriggerHardeningSql = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const nameEmailSql = readFileSync(
+  new URL("../supabase/migrations/20260923120000_qea_nome_email_limite.sql", import.meta.url),
+  "utf8",
+).toLowerCase();
+
 test("migrazione protegge tutte le tabelle esposte", () => {
   for (const table of ["audience_questions", "audience_question_archives", "audience_question_archive_items", "qea_rate_limit_events"]) {
     assert.match(sql, new RegExp(`alter table public\\.${table} enable row level security`));
@@ -62,4 +67,36 @@ test("la conservazione è automatica in Supabase e non modifica cron.job diretta
 test("la funzione automatica RLS non è invocabile dai ruoli API", () => {
   assert.match(rlsTriggerHardeningSql, /revoke execute on function public\.rls_auto_enable\(\)/);
   assert.match(rlsTriggerHardeningSql, /from public, anon, authenticated/);
+});
+
+test("impostazioni del modulo: una riga, RLS, niente accesso pubblico, niente insert o delete", () => {
+  assert.match(nameEmailSql, /create table public\.qea_settings/);
+  assert.match(nameEmailSql, /id smallint primary key default 1 check \(id = 1\)/);
+  assert.match(nameEmailSql, /alter table public\.qea_settings enable row level security/);
+  assert.match(nameEmailSql, /revoke all on table public\.qea_settings from public, anon, authenticated, service_role/);
+  assert.match(nameEmailSql, /grant select, update on table public\.qea_settings to service_role/);
+  assert.equal(/grant[^;]*(insert|delete)[^;]*qea_settings/.test(nameEmailSql), false);
+  assert.match(nameEmailSql, /name_field text not null default 'off' check \(name_field in \('off', 'optional', 'required'\)\)/);
+  assert.match(nameEmailSql, /device_limit_window_seconds in \(900, 3600, 10800, 86400\)/);
+  assert.match(nameEmailSql, /values \(1, 'off', 'off', 3, 3600\)/);
+});
+
+test("nome ed email: colonne facoltative con vincoli, copiate nell'archivio", () => {
+  for (const table of ["audience_questions", "audience_question_archive_items"]) {
+    assert.match(nameEmailSql, new RegExp(`alter table public\\.${table}\\s+add column display_name text`));
+  }
+  assert.match(nameEmailSql, /char_length\(display_name\) between 2 and 80/);
+  assert.match(nameEmailSql, /char_length\(contact_email\) between 6 and 254/);
+  assert.match(nameEmailSql, /rejected_at, display_name, contact_email\s+\)/);
+  assert.match(nameEmailSql, /lock table public\.audience_questions in share row exclusive mode/);
+});
+
+test("limite per dispositivo: nuovo scope nella tabella e nella funzione, sicurezza invariata", () => {
+  assert.match(nameEmailSql, /check \(scope in \('question-submit', 'question-device', 'admin-login'\)\)/);
+  assert.match(nameEmailSql, /if p_scope not in \('question-submit', 'question-device', 'admin-login'\)/);
+  assert.match(nameEmailSql, /pg_advisory_xact_lock[\s\S]*v_now := clock_timestamp\(\)/);
+  assert.equal(nameEmailSql.includes("security definer"), false);
+  assert.match(nameEmailSql, /revoke all on function public\.check_rate_limit\(text, text, integer, integer\)\s+from public, anon, authenticated/);
+  assert.match(nameEmailSql, /revoke all on function public\.archive_all_audience_questions\(text\)\s+from public, anon, authenticated/);
+  assert.equal(/(?:insert|update|delete)\s+(?:into\s+)?cron\.job\b/.test(nameEmailSql), false);
 });

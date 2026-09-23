@@ -3,14 +3,14 @@ import { verifyAdminCredentials } from "@/lib/auth/credentials";
 import { ADMIN_COOKIE, adminCookieOptions, createSessionToken } from "@/lib/auth/session";
 import { evaluateAdminLogin } from "@/lib/http/admin-login-handler";
 import { hashIpFromRequest } from "@/lib/security/ip";
-import { checkHourlyRateLimit } from "@/lib/security/rate-limit";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const result = await evaluateAdminLogin(request, {
     hashIp: hashIpFromRequest,
-    checkRateLimit: checkHourlyRateLimit,
+    checkRateLimit,
     verifyCredentials: verifyAdminCredentials,
   });
   if (!result.ok) return result.response;

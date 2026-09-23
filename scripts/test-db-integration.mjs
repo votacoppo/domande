@@ -93,4 +93,35 @@ assert.notEqual(await psql(`select count(*) from public.audience_question_archiv
 await psql(`delete from public.audience_question_archives where id='${cascadeId}';`);
 assert.equal(await psql(`select count(*) from public.audience_question_archive_items where archive_id='${cascadeId}';`), "0");
 
-process.stdout.write("PASS DB: concorrenza 10/20, ruoli, scadenza, transizioni, rollback, lock e cascade\n");
+// Limite per telefono: stesso blocco atomico del limite per rete, conteggi separati.
+const deviceHash = "d".repeat(64);
+const deviceRuns = await Promise.all(Array.from({ length: 8 }, () => psql(
+  `select allowed from public.check_rate_limit('question-device','${deviceHash}',3,900);`,
+)));
+assert.equal(deviceRuns.filter((value) => value === "t").length, 3);
+assert.equal(await psql(`select allowed from public.check_rate_limit('question-submit','${deviceHash}',3,900);`), "t");
+await psql("select * from public.check_rate_limit('question-inventato','" + deviceHash + "',3,900);", "service_role", false);
+
+// Impostazioni: una sola riga, niente accesso dai ruoli pubblici, niente insert/delete.
+assert.equal(await psql("select name_field||','||email_field||','||device_limit_max||','||device_limit_window_seconds from public.qea_settings;"), "off,off,3,3600");
+for (const role of ["anon", "authenticated"]) {
+  await psql("select * from public.qea_settings;", role, false);
+  await psql("update public.qea_settings set name_field='required';", role, false);
+}
+await psql("insert into public.qea_settings(id) values (2);", "service_role", false);
+await psql("delete from public.qea_settings;", "service_role", false);
+await psql("update public.qea_settings set name_field='sempre';", "service_role", false);
+await psql("update public.qea_settings set device_limit_window_seconds=7200;", "service_role", false);
+await psql("update public.qea_settings set name_field='optional', email_field='required', device_limit_max=null;");
+assert.equal(await psql("select name_field||','||email_field||','||coalesce(device_limit_max::text,'nessuno') from public.qea_settings;"), "optional,required,nessuno");
+await psql("update public.qea_settings set name_field='off', email_field='off', device_limit_max=3, device_limit_window_seconds=3600;");
+
+// Nome ed email: vincoli sul formato e copia nell'archivio.
+await psql(`insert into public.audience_questions(question_text,status,ip_hash,source,display_name) values ('Nome corto','pending','${hashA}','${source}','A');`, "service_role", false);
+await psql(`insert into public.audience_questions(question_text,status,ip_hash,source,contact_email) values ('Email storta','pending','${hashA}','${source}','non-una-email');`, "service_role", false);
+await psql("truncate public.audience_questions;", "postgres");
+await psql(`insert into public.audience_questions(question_text,status,ip_hash,source,display_name,contact_email) values ('Con identità','pending','${hashA}','${source}','Giulia Ferraris','giulia@example.com');`);
+const namedArchive = await psql("select archive_id from public.archive_all_audience_questions('Con nomi');");
+assert.equal(await psql(`select display_name||'|'||contact_email from public.audience_question_archive_items where archive_id='${namedArchive}';`), "Giulia Ferraris|giulia@example.com");
+
+process.stdout.write("PASS DB: concorrenza 10/20, ruoli, scadenza, transizioni, rollback, lock, cascade, limite per telefono, impostazioni e nome/email\n");

@@ -1,7 +1,8 @@
 # Domande dal pubblico — Marcello Coppo
 
-Applicazione autonoma per raccogliere domande senza chiedere nome o email, moderarle da una
-dashboard privata e mostrarle su uno schermo durante un incontro pubblico.
+Applicazione autonoma per raccogliere domande dal pubblico — anonime oppure con nome e email,
+secondo il selettore in dashboard —, moderarle da una dashboard privata e mostrarle su uno
+schermo durante un incontro pubblico.
 
 La parità funzionale è documentata in `docs/PARITA-FUNZIONALE.md`. La configurazione operativa
 è in `docs/SETUP.md`; la consegna degli account è in `docs/HANDOVER.md`.

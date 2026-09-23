@@ -6,7 +6,7 @@ import type { PublishedQuestion } from "@/lib/questions-types";
 function sameQuestions(current: PublishedQuestion[], next: PublishedQuestion[]): boolean {
   return current.length === next.length && current.every((item, index) => {
     const other = next[index];
-    return other && item.id === other.id && item.question_text === other.question_text && item.published_at === other.published_at;
+    return other && item.id === other.id && item.question_text === other.question_text && item.display_name === other.display_name && item.published_at === other.published_at;
   });
 }
 
@@ -71,11 +71,15 @@ export function QuestionWall({ initialQuestions }: { initialQuestions: Published
           <article className="panel featured">
             <p className="featured-label">Domanda in evidenza</p>
             <p className={`featured-text ${densityClass}`}>{latest.question_text}</p>
+            {latest.display_name ? <p className="featured-author">— {latest.display_name}</p> : null}
           </article>
           {questions.length > 1 ? (
             <ul className="question-list" aria-label="Domande precedenti">
               {questions.slice(1).map((question) => (
-                <li className="question-item" key={question.id}>{question.question_text}</li>
+                <li className="question-item" key={question.id}>
+                  {question.question_text}
+                  {question.display_name ? <span className="question-author">— {question.display_name}</span> : null}
+                </li>
               ))}
             </ul>
           ) : null}

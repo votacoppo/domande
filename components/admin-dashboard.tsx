@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { QuestionSettingsPanel } from "@/components/question-settings-panel";
 import { ArchiveRequestCoordinator } from "@/lib/archive-request-coordinator";
+import type { QuestionSettings } from "@/lib/question-settings";
 import type { AdminSnapshot, ArchiveItem, QuestionAction, QuestionRow } from "@/lib/questions-types";
 
 const EMPTY: AdminSnapshot = { pending: [], published: [], saved: [], rejected: [], archives: [] };
@@ -15,6 +17,21 @@ const BUCKET_LABELS: Record<ArchiveItem["admin_bucket"], string> = {
 function when(value: string | null): string {
   if (!value) return "—";
   return new Date(value).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+function Identity({ item }: { item: Pick<QuestionRow, "display_name" | "contact_email"> }) {
+  if (!item.display_name && !item.contact_email) return null;
+  return (
+    <p className="question-identity">
+      {item.display_name ? <span><strong>{item.display_name}</strong></span> : null}
+      {item.contact_email ? (
+        <span>
+          <a href={`mailto:${item.contact_email}`}>{item.contact_email}</a>
+          <span className="private-tag">solo per te</span>
+        </span>
+      ) : null}
+    </p>
+  );
 }
 
 type CardAction = { label: string; action: QuestionAction; kind?: "danger" | "success" };
@@ -31,6 +48,7 @@ function QuestionCards({ items, actions, actingId, onAction }: {
       {items.map((item, index) => (
         <li className="panel question-card" key={item.id}>
           <p className="question-copy">{item.question_text}</p>
+          <Identity item={item} />
           <p className="question-meta">
             Ricevuta {when(item.created_at)}
             {item.published_at ? ` · Pubblicata ${when(item.published_at)}` : ""}
@@ -56,7 +74,10 @@ function QuestionCards({ items, actions, actingId, onAction }: {
   );
 }
 
-export function AdminDashboard({ reviewData }: { reviewData?: AdminSnapshot }) {
+export function AdminDashboard({ reviewData, reviewSettings }: {
+  reviewData?: AdminSnapshot;
+  reviewSettings?: QuestionSettings;
+}) {
   const review = Boolean(reviewData);
   const [snapshot, setSnapshot] = useState(reviewData ?? EMPTY);
   const [loading, setLoading] = useState(!review);
@@ -234,6 +255,8 @@ export function AdminDashboard({ reviewData }: { reviewData?: AdminSnapshot }) {
       {error ? <p className="notice notice-error" role="alert">{error}</p> : null}
       {message ? <p className="notice notice-success" role="status">{message}</p> : null}
 
+      <QuestionSettingsPanel reviewSettings={reviewSettings} />
+
       <section className="panel archive-box">
         <h3>Archivia incontro</h3>
         <p className="lede">Salva uno snapshot e svuota la coda per il prossimo evento.</p>
@@ -300,6 +323,7 @@ export function AdminDashboard({ reviewData }: { reviewData?: AdminSnapshot }) {
                 {review ? <p className="lede">Contenuto archivio disponibile nella versione collegata al database.</p> : archiveItems.map((item) => (
                   <div className="archive-item" key={item.id}>
                     <p className="question-copy">{item.question_text}</p>
+                    <Identity item={item} />
                     <p className="question-meta">
                       {BUCKET_LABELS[item.admin_bucket]} · Ricevuta {when(item.created_at)}
                       {item.published_at ? ` · Pubblicata ${when(item.published_at)}` : ""}

@@ -3,6 +3,7 @@ import { QrPanel } from "@/components/qr-panel";
 import { QuestionWall } from "@/components/question-wall";
 import { questionFormUrl } from "@/lib/config";
 import { questionQrDataUrl } from "@/lib/qr";
+import { getQuestionSettingsOrDefault } from "@/lib/question-settings-repository";
 import { listPublishedQuestions } from "@/lib/questions-repository";
 import type { PublishedQuestion } from "@/lib/questions-types";
 
@@ -16,11 +17,12 @@ export default async function QuestionWallPage() {
   } catch {
     initialQuestions = [];
   }
-  const [qrDataUrl, formUrl] = await Promise.all([questionQrDataUrl(), Promise.resolve(questionFormUrl())]);
+  const [qrDataUrl, settings] = await Promise.all([questionQrDataUrl(), getQuestionSettingsOrDefault()]);
+  const formUrl = questionFormUrl();
   return (
     <main className="page">
       <div className="shell kiosk">
-        <QrPanel dataUrl={qrDataUrl} formUrl={formUrl} />
+        <QrPanel dataUrl={qrDataUrl} formUrl={formUrl} settings={settings} />
         <QuestionWall initialQuestions={initialQuestions} />
       </div>
     </main>

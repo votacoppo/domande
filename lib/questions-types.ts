@@ -7,11 +7,15 @@ export type QuestionRow = {
   created_at: string;
   published_at: string | null;
   rejected_at: string | null;
+  display_name: string | null;
+  contact_email: string | null;
 };
 
+/** Ciò che vede la sala: mai l'email, solo il nome se la persona l'ha lasciato. */
 export type PublishedQuestion = {
   id: string;
   question_text: string;
+  display_name: string | null;
   published_at: string;
 };
 
@@ -33,6 +37,8 @@ export type ArchiveItem = {
   created_at: string;
   published_at: string | null;
   rejected_at: string | null;
+  display_name: string | null;
+  contact_email: string | null;
 };
 
 export type AdminSnapshot = {

@@ -4,9 +4,24 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { QUESTION_MAX_LENGTH, QUESTION_MIN_LENGTH, TURNSTILE_ACTION } from "@/lib/config";
+import { CONTACT_EMAIL_MAX_LENGTH, DISPLAY_NAME_MAX_LENGTH } from "@/lib/question-input";
+import type { FieldMode, QuestionSettings } from "@/lib/question-settings";
 
-export function QuestionForm({ enabled, siteKey }: { enabled: boolean; siteKey: string }) {
+function fieldSuffix(mode: FieldMode, feminine = false): string {
+  if (mode === "required") return "";
+  return feminine ? " (facoltativa)" : " (facoltativo)";
+}
+
+export function QuestionForm({ enabled, siteKey, settings, preview = false }: {
+  enabled: boolean;
+  siteKey: string;
+  settings: QuestionSettings;
+  /** Anteprima di sviluppo: mostra i campi senza Turnstile e senza invio. */
+  preview?: boolean;
+}) {
   const [questionText, setQuestionText] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [gotcha, setGotcha] = useState("");
   const [token, setToken] = useState("");
@@ -33,6 +48,16 @@ export function QuestionForm({ enabled, siteKey }: { enabled: boolean; siteKey: 
       setMessage(`Scrivi una domanda tra ${QUESTION_MIN_LENGTH} e ${QUESTION_MAX_LENGTH} caratteri.`);
       return;
     }
+    if (settings.nameField === "required" && !displayName.trim()) {
+      setStatus("error");
+      setMessage("Inserisci nome e cognome.");
+      return;
+    }
+    if (settings.emailField === "required" && !contactEmail.trim()) {
+      setStatus("error");
+      setMessage("Inserisci la tua email.");
+      return;
+    }
     if (!privacyAccepted) {
       setStatus("error");
       setMessage("Devi accettare l’informativa privacy.");
@@ -51,6 +76,8 @@ export function QuestionForm({ enabled, siteKey }: { enabled: boolean; siteKey: 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           questionText: trimmed,
+          ...(settings.nameField !== "off" ? { displayName: displayName.trim() } : {}),
+          ...(settings.emailField !== "off" ? { contactEmail: contactEmail.trim() } : {}),
           privacyAccepted: true,
           _gotcha: gotcha,
           formLoadedAt: loadedAt,
@@ -105,7 +132,7 @@ export function QuestionForm({ enabled, siteKey }: { enabled: boolean; siteKey: 
       <div className="field">
         <label className="label" htmlFor="questionText">La tua domanda</label>
         <p className="field-hint">
-          Non inserire nomi, recapiti o altri dati personali, tuoi o di terzi.
+          Nella domanda non inserire dati di terzi o informazioni delicate.
         </p>
         <textarea
           className="textarea"
@@ -122,6 +149,48 @@ export function QuestionForm({ enabled, siteKey }: { enabled: boolean; siteKey: 
         <span className="counter">{Array.from(questionText).length}/{QUESTION_MAX_LENGTH}</span>
       </div>
 
+      {settings.nameField !== "off" ? (
+        <div className="field">
+          <label className="label" htmlFor="displayName">
+            Nome e cognome{fieldSuffix(settings.nameField)}
+          </label>
+          <p className="field-hint">Se la domanda viene scelta, il nome compare sullo schermo in sala.</p>
+          <input
+            className="input"
+            id="displayName"
+            name="displayName"
+            autoComplete="name"
+            value={displayName}
+            maxLength={DISPLAY_NAME_MAX_LENGTH}
+            required={settings.nameField === "required"}
+            disabled={!enabled || status === "loading"}
+            onChange={(event) => setDisplayName(event.target.value)}
+          />
+        </div>
+      ) : null}
+
+      {settings.emailField !== "off" ? (
+        <div className="field">
+          <label className="label" htmlFor="contactEmail">
+            Email{fieldSuffix(settings.emailField, true)}
+          </label>
+          <p className="field-hint">Non verrà mai mostrata: serve solo per ricontattarti su questa domanda.</p>
+          <input
+            className="input"
+            id="contactEmail"
+            name="contactEmail"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            value={contactEmail}
+            maxLength={CONTACT_EMAIL_MAX_LENGTH}
+            required={settings.emailField === "required"}
+            disabled={!enabled || status === "loading"}
+            onChange={(event) => setContactEmail(event.target.value)}
+          />
+        </div>
+      ) : null}
+
       <div className="hidden-honeypot" aria-hidden="true">
         <label htmlFor="_gotcha">Lascia vuoto</label>
         <input
@@ -134,7 +203,7 @@ export function QuestionForm({ enabled, siteKey }: { enabled: boolean; siteKey: 
         />
       </div>
 
-      {enabled && siteKey ? (
+      {enabled && siteKey && !preview ? (
         <Turnstile
           ref={widget}
           siteKey={siteKey}

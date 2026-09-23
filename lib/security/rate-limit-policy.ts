@@ -1,4 +1,12 @@
-export type RateLimitInput = { key: string; ipHash: string; max: number };
+export type RateLimitKey = "question-submit" | "question-device" | "admin-login";
+
+export type RateLimitInput = {
+  key: RateLimitKey;
+  /** HMAC esadecimale dell'IP o del dispositivo: mai il valore in chiaro. */
+  identifier: string;
+  max: number;
+  windowSeconds?: number;
+};
 
 export type RateLimitResult =
   | { allowed: true }

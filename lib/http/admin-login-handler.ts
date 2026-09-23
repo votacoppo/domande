@@ -1,9 +1,9 @@
-import type { RateLimitResult } from "../security/rate-limit-policy.ts";
+import type { RateLimitInput, RateLimitResult } from "../security/rate-limit-policy.ts";
 import { mutationGuard, readJsonBody } from "../security/request.ts";
 
 export type AdminLoginDependencies = {
   hashIp: (request: Request) => string | null;
-  checkRateLimit: (input: { key: string; ipHash: string; max: number }) => Promise<RateLimitResult>;
+  checkRateLimit: (input: RateLimitInput) => Promise<RateLimitResult>;
   verifyCredentials: (email: string, password: string) => boolean;
 };
 
@@ -43,7 +43,7 @@ export async function evaluateAdminLogin(
       response: Response.json({ error: "Servizio non disponibile." }, { status: 503 }),
     };
   }
-  const rate = await dependencies.checkRateLimit({ key: "admin-login", ipHash, max: 10 });
+  const rate = await dependencies.checkRateLimit({ key: "admin-login", identifier: ipHash, max: 10 });
   if (!rate.allowed) {
     const headers = rate.status === 429
       ? { "Retry-After": String(rate.retryAfter ?? 3600) }

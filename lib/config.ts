@@ -45,3 +45,9 @@ export function privacyConfig(): {
     retentionPolicy,
   };
 }
+
+// Tetto per rete: in sala molte persone escono dalla stessa Wi‑Fi (e spesso dalla
+// stessa rete mobile) con un unico indirizzo IP. Il limite per persona lo decide la
+// dashboard sul singolo telefono; questo tetto ferma solo gli abusi massicci.
+export const NETWORK_QUESTION_LIMIT = 60;
+export const NETWORK_QUESTION_WINDOW_SECONDS = 3600;

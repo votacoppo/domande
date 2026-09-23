@@ -6,7 +6,8 @@ Il sorgente non è stato modificato; questa applicazione ne estrae soltanto la f
 ## Funzioni replicate
 
 - Pagina `/QeA` con QR, domanda più recente in evidenza e precedenti sotto.
-- Pagina `/QeA/invia`, domanda da 3 a 500 caratteri, senza nome o email.
+- Pagina `/QeA/invia`, domanda da 3 a 500 caratteri; nome ed email non chiesti, facoltativi o
+  obbligatori secondo le impostazioni della dashboard (tabella `qea_settings`, una riga).
 - Polling: wall ogni secondo, dashboard ogni due secondi; una richiesta alla volta e pausa quando
   la scheda non è visibile.
 - Dashboard con quattro gruppi: In attesa, In sala, Salvate, Bocciate.
@@ -14,7 +15,8 @@ Il sorgente non è stato modificato; questa applicazione ne estrae soltanto la f
 - Archivio nominato che salva uno snapshot con lo stato di ogni domanda e svuota la coda live.
 - Login amministratore con scrypt, cookie firmato HttpOnly/Secure/SameSite e epoch per revocare
   tutte le sessioni.
-- Honeypot, tempo minimo di compilazione, Turnstile e limite di 10 invii o login per IP/ora.
+- Honeypot, tempo minimo di compilazione e Turnstile; limite per telefono impostabile in dashboard
+  (cookie tecnico HMAC, valore iniziale 3 all'ora), tetto di 60 invii per rete/ora e 10 login per IP/ora.
 
 ## Irrigidimenti rispetto al sorgente
 

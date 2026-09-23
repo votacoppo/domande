@@ -37,3 +37,30 @@ test("origin e redirect sono allowlist esatte", () => {
   assert.equal(safeAdminRedirect("/interno/domande"), "/interno/domande");
   assert.equal(safeAdminRedirect("//evil.example"), "/interno");
 });
+
+test("cookie del dispositivo: formato rigido, hash stabile e valori manomessi scartati", async () => {
+  process.env.IP_HASH_SECRET = "s".repeat(48);
+  const { DEVICE_COOKIE, deviceCookieHeader, hashDeviceId, newDeviceId, readDeviceId, resolveDevice } =
+    await import("../lib/security/device.ts");
+  const id = newDeviceId();
+  assert.match(id, /^[A-Za-z0-9_-]{43}$/);
+  const withCookie = new Request("https://example.test", { headers: { cookie: `altro=1; ${DEVICE_COOKIE}=${id}` } });
+  assert.equal(readDeviceId(withCookie), id);
+  assert.deepEqual(resolveDevice(withCookie), { hash: hashDeviceId(id), newId: null });
+  assert.equal(hashDeviceId(id).length, 64);
+  assert.equal(hashDeviceId(id).includes(id), false);
+  // L'hash del dispositivo non coincide con quello di un IP con lo stesso valore.
+  assert.notEqual(hashDeviceId(id), hashClientIp(id));
+
+  for (const forged of ["corto", `${id}x`, "a".repeat(42) + "!", "' or 1=1 --"]) {
+    const request = new Request("https://example.test", { headers: { cookie: `${DEVICE_COOKIE}=${forged}` } });
+    assert.equal(readDeviceId(request), null);
+    const resolved = resolveDevice(request);
+    assert.match(resolved.newId ?? "", /^[A-Za-z0-9_-]{43}$/);
+  }
+  const header = deviceCookieHeader(id);
+  assert.match(header, /HttpOnly/);
+  assert.match(header, /SameSite=Strict/);
+  assert.match(header, /Path=\/api\/domande/);
+  assert.match(header, /Max-Age=86400/);
+});

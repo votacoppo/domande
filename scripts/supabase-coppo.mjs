@@ -147,21 +147,28 @@ async function verify() {
     select
       (select count(*) from information_schema.tables
        where table_schema = 'public'
-         and table_name in ('audience_questions','audience_question_archives','audience_question_archive_items','qea_rate_limit_events')) as tables_count,
+         and table_name in ('audience_questions','audience_question_archives','audience_question_archive_items','qea_rate_limit_events','qea_settings')) as tables_count,
       (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
        where n.nspname = 'public'
-         and c.relname in ('audience_questions','audience_question_archives','audience_question_archive_items','qea_rate_limit_events')
+         and c.relname in ('audience_questions','audience_question_archives','audience_question_archive_items','qea_rate_limit_events','qea_settings')
          and c.relrowsecurity) as rls_count,
       (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
        where (n.nspname, p.proname) in (('public','check_rate_limit'),('public','archive_all_audience_questions'),('private','qea_cleanup_expired_data'))) as functions_count,
-      (select count(*) from cron.job where jobname = 'qea-retention-daily') as cron_count;
+      (select count(*) from cron.job where jobname = 'qea-retention-daily') as cron_count,
+      (select count(*) from public.qea_settings where id = 1) as settings_count;
   `);
   const result = rows(data)[0];
   if (!result) throw new Error("Verifica Supabase senza risultato.");
-  if (Number(result.tables_count) !== 4 || Number(result.rls_count) !== 4 || Number(result.functions_count) !== 3 || Number(result.cron_count) !== 1) {
+  if (
+    Number(result.tables_count) !== 5 ||
+    Number(result.rls_count) !== 5 ||
+    Number(result.functions_count) !== 3 ||
+    Number(result.cron_count) !== 1 ||
+    Number(result.settings_count) !== 1
+  ) {
     throw new Error("Schema Supabase incompleto o job di conservazione non corretto.");
   }
-  process.stdout.write("OK SUPABASE: 4 tabelle, RLS 4/4, 3 funzioni, cron giornaliero unico\n");
+  process.stdout.write("OK SUPABASE: 5 tabelle, RLS 5/5, 3 funzioni, riga impostazioni, cron giornaliero unico\n");
 
   const cronData = await query(`
     select job.jobid, job.schedule, job.active, job.command,

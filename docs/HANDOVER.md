@@ -23,6 +23,21 @@ viene generata separatamente e non coincide con email, database o altri servizi.
 5. “Rimetti in evidenza” porta una domanda in cima. “Rimuovi da sala” la conserva in Salvate.
 6. A fine incontro usa “Archivia tutto”, assegna un nome riconoscibile e riparti con la coda vuota.
 
+## Impostazioni del modulo
+
+In cima alla dashboard, **Impostazioni del modulo** si apre con un tocco e mostra da chiuso il
+riassunto delle scelte attive.
+
+- **Nome e cognome** ed **Email** hanno tre posizioni: *Non chiedere* (il campo non compare e il
+  server scarta qualsiasi valore), *Facoltativo*, *Obbligatorio*. Il nome, se lasciato, compare in
+  sala sotto la domanda; l'email si vede solo in dashboard, con il bollino “solo per te”.
+- **Limite di domande per persona**: da 1 a 20 domande, oppure nessun limite, ogni 15 minuti,
+  ora, 3 ore o 24 ore. Il conteggio è per telefono, tramite il cookie tecnico `qea_dispositivo`
+  (24 ore), così una sala sulla stessa Wi‑Fi non si blocca. Resta sempre un tetto di sicurezza di
+  60 domande all'ora per rete.
+- Le modifiche valgono solo dopo **Salva impostazioni**; il valore iniziale è anonimo con 3
+  domande all'ora per telefono.
+
 ## Sicurezza e recupero
 
 - Per cambiare password, genera un nuovo `ADMIN_PASSWORD_HASH` e ridistribuisci.
