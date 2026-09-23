@@ -80,6 +80,13 @@ Per gli aggiornamenti futuri: modificare il repository, eseguire i controlli, co
 `main`, quindi rilanciare `npm run deploy:production` con le credenziali del cliente. Non è
 necessario usare l'account GitHub personale di Marco né collegare altri progetti Vercel.
 
+**Se il rilascio contiene una migrazione, il database va sempre prima del codice**:
+`supabase:migrate` → `supabase:verify` → `test:db:remote-safe`, e solo dopo il push di `main` e
+`deploy:production`. Il codice arrivato prima dello schema fallisce: per esempio senza
+`20260923120000_qea_nome_email_limite.sql` il limite `question-device` risponde
+`INVALID_RATE_LIMIT_INPUT` e ogni invio di domanda si chiude con 503. Le migrazioni sono solo
+additive, quindi il codice precedente continua a funzionare sullo schema nuovo.
+
 ## 4. Gate di consegna
 
 | Controllo | Stato locale | Stato live |
